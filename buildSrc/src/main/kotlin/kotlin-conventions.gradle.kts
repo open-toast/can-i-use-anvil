@@ -17,6 +17,7 @@ plugins {
 spotless {
     kotlin {
         ktlint(libs.versions.ktlint.get())
+        target("src/**/*.kt")
     }
 }
 
