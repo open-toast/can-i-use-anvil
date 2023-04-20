@@ -30,6 +30,7 @@ tasks.withType<KotlinCompile> {
     kotlinOptions {
         jvmTarget = "1.8"
         languageVersion = "1.6"
-        freeCompilerArgs += "-opt-in=kotlin.RequiresOptIn"
+        apiVersion = "1.6"
+        freeCompilerArgs += listOf("-opt-in=kotlin.RequiresOptIn", "-Xcontext-receivers")
     }
 }

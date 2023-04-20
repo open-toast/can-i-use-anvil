@@ -12,7 +12,9 @@ A subset of Kapt+Dagger functionality can be directly replaced with Anvil's fact
 
 ## So can I use Anvil?
 
-This is a Kapt annotation processor which will tell you if you can replace Dagger+Kapt with Anvil is the current project. Specifically, it will call out
+This Gradle plugin will tell you if you can replace Dagger+Kapt with Anvil in a mixed Java/Kotlin project.
+
+Under the hood, it registers a Kapt annotation processor which detects the following patterns incompatible with Anvil.
 
 * Java (non-Kotlin) `@Module`s.
 * Java (non-Kotlin) `@Singleton`s.
@@ -22,19 +24,23 @@ This is a Kapt annotation processor which will tell you if you can replace Dagge
 
 ## How to use it
 
-Add the processor to the `kapt` configuration:
-
-```
-dependencies {
-    kapt("com.toasttab.anvil:can-i-use-anvil-processor:<< version >>")
-}
-```
-
-or, if you have many subprojects without centralized configuration, apply the gradle plugin at the root project level
+Apply the plugin to the root project.
 
 ```
 plugins {
     id("com.toasttab.can-i-use-anvil") version "<< version >>"
+}
+```
+
+Run `./gradlew anvilMigrationReport` to generate an aggregated report for all subprojects under `build/anvil-aggregated-report.json`.
+
+The plugin needs to be aware of the _main_ Kapt task in each subproject. This can be controlled via the `anvilMigration` extension.
+The default is `kaptKotlin`. However, in Android projects, Kapt tasks are variant-specific, e.g. `kaptDebugKotlin`.
+
+```
+anvilMigration {
+    // for mixed Android/Java projects
+    tasks = listOf("kaptKotlin", "kaptDebugKotlin") 
 }
 ```
 

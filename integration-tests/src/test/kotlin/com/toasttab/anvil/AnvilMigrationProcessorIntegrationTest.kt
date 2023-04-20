@@ -15,22 +15,29 @@
 
 package com.toasttab.anvil
 
-import com.google.common.truth.Truth.assertThat
+import com.toasttab.anvil.model.AnvilMigrationBlocker
+import com.toasttab.anvil.model.AnvilMigrationReport
+import com.toasttab.anvil.test.Activity
+import com.toasttab.anvil.test.AppComponent
+import com.toasttab.anvil.test.AppModule
+import com.toasttab.anvil.test.BaseActivity
 import org.junit.jupiter.api.Test
+import strikt.api.expectThat
+import strikt.assertions.containsExactlyInAnyOrder
+
 class AnvilMigrationProcessorIntegrationTest {
     @Test
     fun `verify blockers`() {
-        val lines = Thread.currentThread().contextClassLoader
-            .getResourceAsStream("test-log")
-            .bufferedReader().readLines()
-            .filter { it.isNotEmpty() }
-            .sorted()
+        val report = AnvilMigrationReport.decodeFromString(
+            Thread.currentThread().contextClassLoader
+                .getResourceAsStream("test-report.json").reader().readText(),
+        )
 
-        assertThat(lines).hasSize(4)
-
-        assertThat(lines[0]).contains("Activity inherits @Injected members")
-        assertThat(lines[1]).contains("AppComponent is a Component")
-        assertThat(lines[2]).contains("AppModule is a non-Kotlin Module")
-        assertThat(lines[3]).contains("BaseActivity is a non-Kotlin class")
+        expectThat(report.blockers).containsExactlyInAnyOrder(
+            AnvilMigrationBlocker.InheritedJavaMemberInjection(Activity::class.java.name, setOf(BaseActivity::class.java.name)),
+            AnvilMigrationBlocker.Component(AppComponent::class.java.name),
+            AnvilMigrationBlocker.JavaMemberInjection(BaseActivity::class.java.name),
+            AnvilMigrationBlocker.JavaModule(AppModule::class.java.name),
+        )
     }
 }

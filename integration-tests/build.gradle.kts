@@ -9,7 +9,7 @@ tasks.named<Test>("test") {
 
 kapt {
     arguments {
-        arg("anvil.migration.logFile", "test-log")
+        arg("anvil.migration.report", "classpath://test-report.json")
     }
 }
 
@@ -17,8 +17,9 @@ dependencies {
     kapt(libs.dagger.compiler)
     kapt(projects.canIUseAnvilProcessor)
 
-    implementation(libs.dagger)
+    implementation(projects.canIUseAnvilModel)
+    implementation(libs.dagger.runtime)
 
     testImplementation(libs.junit)
-    testImplementation(libs.truth)
+    testImplementation(libs.strikt.core)
 }
