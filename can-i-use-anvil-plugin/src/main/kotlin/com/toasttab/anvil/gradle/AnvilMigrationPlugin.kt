@@ -19,28 +19,65 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.ConfigurationContainer
+import org.gradle.api.tasks.TaskProvider
+import org.gradle.kotlin.dsl.configure
+import org.gradle.kotlin.dsl.create
+import org.gradle.kotlin.dsl.register
+import org.gradle.kotlin.dsl.withType
+import org.jetbrains.kotlin.gradle.internal.KaptTask
+import org.jetbrains.kotlin.gradle.plugin.KaptExtension
+
 class AnvilMigrationPlugin : Plugin<Project> {
     override fun apply(root: Project) {
-        root.allprojects.forEach { p ->
-            p.afterEvaluate {
-                configurations.kapt().forEach { kapt ->
-                    if (kapt.hasDagger()) {
-                        addDependency(kapt, "com.toasttab.anvil:can-i-use-anvil-processor:${BuildConfig.VERSION}")
+        val extension = root.extensions.create<AnvilMigrationExtension>("anvilMigration")
+
+        val rootReportTask = root.tasks.register<RootReportTask>("anvilMigrationReport") {
+            output = project.layout.buildDirectory.file("anvil-aggregated-report.json").get().asFile
+        }
+
+        root.allprojects.forEach { sub ->
+            sub.afterEvaluate {
+                configurations.kapt {
+                    if (it.hasDagger()) {
+                        val output = layout.buildDirectory.file("anvil-report.json").get().asFile
+
+                        configure<KaptExtension> {
+                            arguments {
+                                arg("anvil.migration.project", sub.name)
+                                arg("anvil.migration.report", "file://$output")
+                            }
+                        }
+
+                        tasks.withType<KaptTask> {
+                            if (extension.matches(name)) {
+                                outputs.file(output).withPropertyName("anvil-report-output")
+
+                                addReportTask(rootReportTask, output, this)
+                            }
+                        }
+
+                        it.addDependency("com.toasttab.anvil:can-i-use-anvil-processor:${BuildConfig.VERSION}")
                     }
                 }
             }
         }
     }
 
-    private fun ConfigurationContainer.kapt() = matching { conf ->
-        conf.name == "kapt"
+    private fun addReportTask(reportTask: TaskProvider<RootReportTask>, output: Any, kaptTask: KaptTask) {
+        reportTask.configure {
+            dependsOn(kaptTask)
+            reports.from(output)
+        }
     }
+
+    private fun ConfigurationContainer.kapt(f: (Configuration) -> Unit) = matching { it.name == "kapt" }.forEach(f)
 
     private fun Configuration.hasDagger() = dependencies.any { dep ->
         dep.group == "com.google.dagger" && dep.name == "dagger-compiler"
     }
 
-    private fun Project.addDependency(conf: Configuration, spec: String) {
-        conf.dependencies.add(dependencies.create(spec))
+    context(Project)
+    private fun Configuration.addDependency(spec: String) {
+        dependencies.add(this@Project.dependencies.create(spec))
     }
 }

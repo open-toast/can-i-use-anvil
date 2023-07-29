@@ -15,61 +15,82 @@
 
 package com.toasttab.anvil.gradle
 
-import com.google.common.truth.Truth.assertThat
+import com.toasttab.anvil.model.AggregatedAnvilMigrationReport
+import com.toasttab.anvil.model.AnvilMigrationBlocker
 import org.gradle.testkit.runner.GradleRunner
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.io.TempDir
+import org.junit.jupiter.api.extension.ExtendWith
+import strikt.api.expectThat
+import strikt.assertions.contains
+import strikt.assertions.containsExactly
+import strikt.assertions.hasSize
+import strikt.assertions.isEqualTo
 import java.io.File
 
+@ExtendWith(TestProjectExtension::class)
 class AnvilMigrationPluginIntegrationTest {
-    @TempDir
-    lateinit var buildDir: File
-
-    private fun buildFile() = File(buildDir, "build.gradle.kts")
-
-    private val commonBuildScript = """
-        plugins { 
-          kotlin("jvm") version "${TestBuildConfig.KOTLIN_VERSION}"
-          kotlin("kapt") version "${TestBuildConfig.KOTLIN_VERSION}"
-          id("com.toasttab.can-i-use-anvil")
-        }
-    """
-
     @Test
-    fun `processor dependency added to the kapt configuration when using dagger`() {
-        buildFile().writeText(
-            """
-                $commonBuildScript
-                
-                dependencies {
-                  kapt("${TestBuildConfig.DAGGER_COMPILER}")
-                }
-            """,
-        )
-
+    fun `processor dependency added to the kapt configuration when using dagger`(project: TestProject) {
         val result = GradleRunner.create()
-            .withProjectDir(buildDir)
+            .withProjectDir(project.dir)
             .withArguments("dependencies", "--configuration=kapt")
             .withPluginClasspath()
             .build()
 
-        assertThat(result.output).contains(
+        expectThat(result.output).contains(
             "com.toasttab.anvil:can-i-use-anvil-processor:${BuildConfig.VERSION}",
         )
     }
 
     @Test
-    fun `processor dependency not added to the kapt configuration when not using dagger`() {
-        buildFile().writeText(commonBuildScript)
-
+    fun `processor dependency not added to the kapt configuration when not using dagger`(project: TestProject) {
         val result = GradleRunner.create()
-            .withProjectDir(buildDir)
+            .withProjectDir(project.dir)
             .withArguments("dependencies", "--configuration=kapt")
             .withPluginClasspath()
             .build()
 
-        assertThat(result.output).doesNotContain(
+        expectThat(result.output).not().contains(
             "com.toasttab.anvil:can-i-use-anvil-processor",
         )
+    }
+
+    @Test
+    fun `processor dependency not added without kapt`(project: TestProject) {
+        val result = GradleRunner.create()
+            .withProjectDir(project.dir)
+            .withArguments("dependencies")
+            .withPluginClasspath()
+            .build()
+
+        expectThat(result.output).not().contains(
+            "com.toasttab.anvil:can-i-use-anvil-processor",
+        )
+    }
+
+    @Test
+    fun `generates correct aggregated report`(project: TestProject) {
+        GradleRunner.create()
+            .withProjectDir(project.dir)
+            .withArguments("anvilMigrationReport")
+            .withPluginClasspath()
+            .build()
+
+        val reports = AggregatedAnvilMigrationReport.decodeFromString(File(project.dir, "build/anvil-aggregated-report.json").readText()).reports.sortedBy { it.project }
+
+        expectThat(reports).hasSize(2)
+        expectThat(reports[0]) {
+            get { blockers }.containsExactly(
+                AnvilMigrationBlocker.JavaModule("com.toasttab.anvil.test.AppModule"),
+            )
+            get { this.project }.isEqualTo("project1")
+        }
+        expectThat(reports[1]) {
+            get { blockers }.containsExactly(
+                AnvilMigrationBlocker.Component("com.toasttab.anvil.test.AppComponent"),
+            )
+
+            get { this.project }.isEqualTo("project2")
+        }
     }
 }

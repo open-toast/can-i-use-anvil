@@ -1,3 +1,5 @@
+import org.apache.tools.ant.filters.ReplaceTokens
+
 plugins {
     `kotlin-dsl`
     `kotlin-conventions`
@@ -9,44 +11,49 @@ plugins {
 buildConfig {
     packageName.set("com.toasttab.anvil.gradle")
     buildConfigField("String", "VERSION", "\"$version\"")
+}
 
-    sourceSets.getByName("test") {
-        buildConfigField("String", "DAGGER_COMPILER", "\"${libs.dagger.compiler.get()}\"")
-        buildConfigField("String", "KOTLIN_VERSION", "\"${libs.versions.kotlin.get()}\"")
-    }
+tasks.register<Copy>("copy-projects") {
+    from("src/test/projects")
+    into("${project.buildDir}/test-projects")
+
+    filter(mapOf("tokens" to mapOf(
+        "DAGGER_VERSION" to libs.versions.dagger.get(),
+        "PROCESSOR_LIBS" to projects.canIUseAnvilProcessor.dependencyProject.file("build/libs").toString()
+    )), ReplaceTokens::class.java)
 }
 
 tasks.named<Test>("test") {
+    dependsOn(":can-i-use-anvil-processor:shadowJar")
+    dependsOn("copy-projects")
+
+    systemProperty("test-projects", "${project.buildDir}/test-projects")
+
     useJUnitPlatform()
 }
 
 dependencies {
     implementation(gradleApi())
+    implementation(libs.kotlin.gradle)
+    implementation(projects.canIUseAnvilModel)
 
     testImplementation(gradleTestKit())
     testImplementation(libs.junit)
-    testImplementation(libs.truth)
+    testImplementation(libs.strikt.core)
 }
 
 gradlePlugin {
-    isAutomatedPublishing = false
+    website = ProjectInfo.url
+    vcsUrl = ProjectInfo.url
 
     plugins {
         create("can-i-use-anvil") {
             id = "com.toasttab.can-i-use-anvil"
             implementationClass = "com.toasttab.anvil.gradle.AnvilMigrationPlugin"
+            tags = listOf("dagger", "anvil")
+            description = ProjectInfo.description
         }
     }
-}
-
-pluginBundle {
-    mavenCoordinates {
-        group = "${project.group}"
-    }
-    website = ProjectInfo.url
-    vcsUrl = ProjectInfo.url
-    description = ProjectInfo.description
-    tags = listOf("dagger", "anvil")
 }
 
 ext[com.gradle.publish.PublishTask.GRADLE_PUBLISH_KEY] = System.getenv("GRADLE_PORTAL_PUBLISH_KEY")

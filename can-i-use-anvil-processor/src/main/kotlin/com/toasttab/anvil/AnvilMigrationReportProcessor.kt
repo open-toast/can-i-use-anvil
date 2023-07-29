@@ -16,9 +16,12 @@
 package com.toasttab.anvil
 
 import com.google.auto.service.AutoService
+import com.toasttab.anvil.model.AnvilMigrationBlocker
+import com.toasttab.anvil.model.AnvilMigrationReport
 import dagger.Component
 import dagger.Module
 import dagger.Subcomponent
+import java.io.FileWriter
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.Processor
 import javax.annotation.processing.RoundEnvironment
@@ -30,39 +33,43 @@ import javax.lang.model.element.TypeElement
 import javax.tools.Diagnostic
 import javax.tools.StandardLocation
 
-const val LOG_FILE = "anvil.migration.logFile"
+const val REPORT_FILE = "anvil.migration.report"
+const val PROJECT_NAME = "anvil.migration.project"
 
 @AutoService(Processor::class)
-class AnvilMigrationAdvisor : AbstractProcessor() {
+class AnvilMigrationReportProcessor : AbstractProcessor() {
     private inline fun <reified T : Annotation> Element.hasAnnotation() = getAnnotation(T::class.java) != null
     private fun Element.isKotlin() = hasAnnotation<Metadata>()
 
     private var firstRound = true
 
-    override fun getSupportedOptions() = setOf(LOG_FILE)
+    override fun getSupportedOptions() = setOf(REPORT_FILE, PROJECT_NAME)
 
     override fun process(annotations: Set<TypeElement>, roundEnv: RoundEnvironment): Boolean {
         if (firstRound) {
             firstRound = false
 
-            val blockers = roundEnv.rootElements.filterIsInstance<TypeElement>().mapNotNull(::blockerType)
+            val report = AnvilMigrationReport(
+                processingEnv.options[PROJECT_NAME] ?: "",
+                roundEnv.rootElements.filterIsInstance<TypeElement>().mapNotNull(::blockerType),
+            )
 
-            if (blockers.isEmpty()) {
-                processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "Can use Anvil!")
-            } else {
-                processingEnv.messager.printMessage(Diagnostic.Kind.WARNING, "Cannot use Anvil because $blockers")
+            processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "$report")
 
-                processingEnv.options[LOG_FILE]?.let { file ->
-                    processingEnv.filer.createResource(
+            processingEnv.options[REPORT_FILE]?.let { file ->
+                val writer = when (val location = OutputLocation.from(file)) {
+                    is OutputLocation.ClasspathLocation -> processingEnv.filer.createResource(
                         StandardLocation.CLASS_OUTPUT,
                         "",
-                        file,
+                        location.path,
                         *roundEnv.rootElements.toTypedArray(),
-                    ).openWriter().use {
-                        for (blocker in blockers) {
-                            it.write("$blocker\n")
-                        }
-                    }
+                    ).openWriter()
+
+                    is OutputLocation.AbsoluteLocation -> FileWriter(location.path)
+                }
+
+                writer.use {
+                    it.write(report.encodeToString())
                 }
             }
         }
@@ -74,11 +81,11 @@ class AnvilMigrationAdvisor : AbstractProcessor() {
         val isKotlin = type.isKotlin()
 
         return if (!isKotlin && type.hasAnnotation<Singleton>()) {
-            AnvilMigrationBlocker.JavaSingleton(type)
+            AnvilMigrationBlocker.JavaSingleton("$type")
         } else if (!isKotlin && type.hasAnnotation<Module>()) {
-            AnvilMigrationBlocker.JavaModule(type)
+            AnvilMigrationBlocker.JavaModule("$type")
         } else if (type.hasAnnotation<Component>() || type.hasAnnotation<Subcomponent>()) {
-            AnvilMigrationBlocker.Component(type)
+            AnvilMigrationBlocker.Component("$type")
         } else {
             val superTypesWithInject = processingEnv.elementUtils.getAllMembers(type).mapNotNull { member ->
                 val declaredIn = member.enclosingElement
@@ -94,9 +101,9 @@ class AnvilMigrationAdvisor : AbstractProcessor() {
 
             if (superTypesWithInject.isNotEmpty()) {
                 if (superTypesWithInject.contains(type)) {
-                    AnvilMigrationBlocker.JavaMemberInjection(type)
+                    AnvilMigrationBlocker.JavaMemberInjection("$type")
                 } else {
-                    AnvilMigrationBlocker.InheritedJavaMemberInjection(type, superTypesWithInject)
+                    AnvilMigrationBlocker.InheritedJavaMemberInjection("$type", superTypesWithInject.map { "$it" }.toSet())
                 }
             } else {
                 null
