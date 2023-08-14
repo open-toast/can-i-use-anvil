@@ -76,12 +76,14 @@ publishing {
     }
 }
 
-if (isRelease() && Pgp.key != null) {
-    signing {
+signing {
+    if (isRelease() && Pgp.key != null) {
         useInMemoryPgpKeys(Pgp.key, Pgp.password)
 
         project.publishing.publications.withType<MavenPublication> {
             sign(this)
         }
+    } else {
+        isRequired = false
     }
 }

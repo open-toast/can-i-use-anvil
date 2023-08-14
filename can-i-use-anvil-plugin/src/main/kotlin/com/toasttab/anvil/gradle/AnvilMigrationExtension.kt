@@ -1,7 +1,7 @@
 package com.toasttab.anvil.gradle
 
 abstract class AnvilMigrationExtension {
-    var tasks: List<String> = listOf("kaptKotlin")
+    var kaptTasks: List<String> = listOf("kaptKotlin")
 
-    fun matches(task: String) = tasks.contains(task)
+    fun matches(task: String) = kaptTasks.contains(task)
 }

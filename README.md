@@ -40,7 +40,7 @@ The default is `kaptKotlin`. However, in Android projects, Kapt tasks are varian
 ```
 anvilMigration {
     // for mixed Android/Java projects
-    tasks = listOf("kaptKotlin", "kaptDebugKotlin") 
+    kaptTasks = listOf("kaptKotlin", "kaptDebugKotlin") 
 }
 ```
 
