@@ -2,4 +2,4 @@ plugins {
     `nexus-staging-conventions`
 }
 
-group = "com.toasttab.anvil"
+group = "com.toasttab.canv"

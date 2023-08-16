@@ -8,7 +8,7 @@ plugins {
 }
 
 buildConfig {
-    packageName.set("com.toasttab.anvil.gradle")
+    packageName.set("com.toasttab.canv.gradle")
     buildConfigField("String", "VERSION", "\"$version\"")
 }
 
@@ -47,7 +47,7 @@ gradlePlugin {
     plugins {
         create("can-i-use-anvil") {
             id = "com.toasttab.can-i-use-anvil"
-            implementationClass = "com.toasttab.anvil.gradle.AnvilMigrationPlugin"
+            implementationClass = "com.toasttab.canv.gradle.AnvilMigrationReportPlugin"
             tags = listOf("dagger", "anvil")
             description = ProjectInfo.description
         }

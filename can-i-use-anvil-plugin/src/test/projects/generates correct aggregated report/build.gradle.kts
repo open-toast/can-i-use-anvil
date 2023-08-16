@@ -18,7 +18,7 @@ subprojects {
             }
 
             content {
-                includeModule("com.toasttab.anvil", "can-i-use-anvil-processor")
+                includeModule("com.toasttab.canv", "can-i-use-anvil-processor")
             }
         }
 
