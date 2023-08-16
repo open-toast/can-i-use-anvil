@@ -2,10 +2,6 @@ plugins {
     id("com.toasttab.can-i-use-anvil")
 }
 
-anvilMigration {
-    tasks = listOf("kaptKotlin")
-}
-
 subprojects {
     repositories {
         // use the ivy repository trick to point kapt to the processor uberjar

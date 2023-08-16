@@ -31,9 +31,7 @@ tasks.named<Jar>("javadocJar") {
 
 publishing {
     publications {
-        create<MavenPublication>("main") {
-            from(components["java"])
-
+        withType<MavenPublication> {
             artifactId = project.name
             version = project.version.toString()
             groupId = project.group.toString()

@@ -22,5 +22,6 @@ dependencies {
     implementation(libs.kotlin.gradle)
     implementation(libs.nexus.staging)
     implementation(libs.spotless)
+    implementation(libs.gradle.publish)
     implementation(files(libs.javaClass.superclass.protectionDomain.codeSource.location))
 }

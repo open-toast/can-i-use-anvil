@@ -2,12 +2,12 @@ import org.gradle.kotlin.dsl.provideDelegate
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.the
 
-fun Project.isRelease() = !project.version.toString().endsWith("-SNAPSHOT")
+fun Project.isRelease() = !"${project.version}".endsWith("-SNAPSHOT")
 val Project.libs get() = the<org.gradle.accessors.dm.LibrariesForLibs>()
 
 object Pgp {
     val key by lazy {
-        System.getenv("PGP_KEY")?.replace('$', '\n')
+        System.getenv("PGP_KEY")
     }
 
     val password by lazy {

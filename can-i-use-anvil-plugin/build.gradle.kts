@@ -3,8 +3,7 @@ import org.apache.tools.ant.filters.ReplaceTokens
 plugins {
     `kotlin-dsl`
     `kotlin-conventions`
-    `publishing-conventions`
-    alias(libs.plugins.gradle.publish)
+    `plugin-publishing-conventions`
     alias(libs.plugins.build.config)
 }
 
@@ -23,13 +22,15 @@ tasks.register<Copy>("copy-projects") {
     )), ReplaceTokens::class.java)
 }
 
-tasks.named<Test>("test") {
-    dependsOn(":can-i-use-anvil-processor:shadowJar")
-    dependsOn("copy-projects")
+tasks {
+    test {
+        useJUnitPlatform()
 
-    systemProperty("test-projects", "${project.buildDir}/test-projects")
+        dependsOn(":can-i-use-anvil-processor:shadowJar")
+        dependsOn("copy-projects")
 
-    useJUnitPlatform()
+        systemProperty("test-projects", "${project.buildDir}/test-projects")
+    }
 }
 
 dependencies {
@@ -43,9 +44,6 @@ dependencies {
 }
 
 gradlePlugin {
-    website = ProjectInfo.url
-    vcsUrl = ProjectInfo.url
-
     plugins {
         create("can-i-use-anvil") {
             id = "com.toasttab.can-i-use-anvil"
@@ -54,11 +52,4 @@ gradlePlugin {
             description = ProjectInfo.description
         }
     }
-}
-
-ext[com.gradle.publish.PublishTask.GRADLE_PUBLISH_KEY] = System.getenv("GRADLE_PORTAL_PUBLISH_KEY")
-ext[com.gradle.publish.PublishTask.GRADLE_PUBLISH_SECRET] = System.getenv("GRADLE_PORTAL_PUBLISH_SECRET")
-
-tasks.named("publishPlugins") {
-    enabled = isRelease()
 }

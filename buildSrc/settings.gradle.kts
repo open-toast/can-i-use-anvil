@@ -1,4 +1,4 @@
-rootProject.name = "can-i-user-anvil-build-src"
+rootProject.name = "can-i-use-anvil-build-src"
 
 dependencyResolutionManagement {
     versionCatalogs {
