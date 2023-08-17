@@ -1,5 +1,8 @@
 # Can I use Anvil?
 
+[![Github Actions](https://github.com/open-toast/can-i-use-anvil/actions/workflows/ci.yml/badge.svg)](https://github.com/open-toast/can-i-use-anvil/actions/workflows/ci.yml)
+[![Maven Central](https://img.shields.io/maven-central/v/com.toasttab.canv/can-i-use-anvil-processor)](https://search.maven.org/artifact/com.toasttab.canv/can-i-use-anvil-processor)
+
 This tool assists with partial replacement of Kapt+Dagger with Anvil in multi-module projects.
 
 ## Background
