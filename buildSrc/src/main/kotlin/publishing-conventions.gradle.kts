@@ -59,19 +59,6 @@ publishing {
             }
         }
     }
-
-    if (isRelease()) {
-        repositories {
-            maven {
-                name = "remote"
-                setUrl(Remote.url)
-                credentials {
-                    username = Remote.username
-                    password = Remote.password
-                }
-            }
-        }
-    }
 }
 
 signing {
