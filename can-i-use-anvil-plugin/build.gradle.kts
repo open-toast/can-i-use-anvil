@@ -50,6 +50,7 @@ gradlePlugin {
             implementationClass = "com.toasttab.canv.gradle.AnvilMigrationReportPlugin"
             tags = listOf("dagger", "anvil")
             description = ProjectInfo.description
+            displayName = ProjectInfo.name
         }
     }
 }
