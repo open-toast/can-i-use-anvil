@@ -2,6 +2,8 @@
 
 [![Github Actions](https://github.com/open-toast/can-i-use-anvil/actions/workflows/ci.yml/badge.svg)](https://github.com/open-toast/can-i-use-anvil/actions/workflows/ci.yml)
 [![Maven Central](https://img.shields.io/maven-central/v/com.toasttab.canv/can-i-use-anvil-processor)](https://search.maven.org/artifact/com.toasttab.canv/can-i-use-anvil-processor)
+[![Gradle Portal](https://img.shields.io/maven-metadata/v/https/plugins.gradle.org/m2/com/toasttab/canv/can-i-use-anvil-plugin/maven-metadata.xml.svg?label=gradle-portal&color=yellowgreen)](https://plugins.gradle.org/plugin/com.toasttab.can-i-use-anvil)
+
 
 This tool assists with partial replacement of Kapt+Dagger with Anvil in multi-module projects.
 
