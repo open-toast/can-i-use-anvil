@@ -17,24 +17,22 @@ package com.toasttab.canv.gradle
 
 import com.toasttab.canv.model.AggregatedAnvilMigrationReport
 import com.toasttab.canv.model.AnvilMigrationBlocker
-import org.gradle.testkit.runner.GradleRunner
+import com.toasttab.gradle.testkit.TestKit
+import com.toasttab.gradle.testkit.TestProject
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.ExtendWith
 import strikt.api.expectThat
 import strikt.assertions.contains
 import strikt.assertions.containsExactly
 import strikt.assertions.hasSize
 import strikt.assertions.isEqualTo
-import java.io.File
+import kotlin.io.path.readText
 
-@ExtendWith(TestProjectExtension::class)
+@TestKit
 class AnvilMigrationReportPluginIntegrationTest {
     @Test
     fun `processor dependency added to the kapt configuration when using dagger`(project: TestProject) {
-        val result = GradleRunner.create()
-            .withProjectDir(project.dir)
+        val result = project.createRunner()
             .withArguments("dependencies", "--configuration=kapt")
-            .withPluginClasspath()
             .build()
 
         expectThat(result.output).contains(
@@ -44,10 +42,8 @@ class AnvilMigrationReportPluginIntegrationTest {
 
     @Test
     fun `processor dependency not added to the kapt configuration when not using dagger`(project: TestProject) {
-        val result = GradleRunner.create()
-            .withProjectDir(project.dir)
+        val result = project.createRunner()
             .withArguments("dependencies", "--configuration=kapt")
-            .withPluginClasspath()
             .build()
 
         expectThat(result.output).not().contains(
@@ -57,10 +53,8 @@ class AnvilMigrationReportPluginIntegrationTest {
 
     @Test
     fun `processor dependency not added without kapt`(project: TestProject) {
-        val result = GradleRunner.create()
-            .withProjectDir(project.dir)
+        val result = project.createRunner()
             .withArguments("dependencies")
-            .withPluginClasspath()
             .build()
 
         expectThat(result.output).not().contains(
@@ -70,13 +64,11 @@ class AnvilMigrationReportPluginIntegrationTest {
 
     @Test
     fun `generates correct aggregated report`(project: TestProject) {
-        GradleRunner.create()
-            .withProjectDir(project.dir)
+        project.createRunner()
             .withArguments("anvilMigrationReport")
-            .withPluginClasspath()
             .build()
 
-        val reports = AggregatedAnvilMigrationReport.decodeFromString(File(project.dir, "build/anvil-aggregated-report.json").readText()).reports.sortedBy { it.project }
+        val reports = AggregatedAnvilMigrationReport.decodeFromString(project.dir.resolve("build/anvil-aggregated-report.json").readText()).reports.sortedBy { it.project }
 
         expectThat(reports).hasSize(2)
         expectThat(reports[0]) {

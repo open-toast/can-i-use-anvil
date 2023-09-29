@@ -11,6 +11,7 @@ repositories {
 
 plugins {
     kotlin("jvm")
+    jacoco
     id("com.diffplug.spotless")
 }
 
@@ -22,13 +23,13 @@ spotless {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
 }
 
 tasks.withType<KotlinCompile> {
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "11"
         languageVersion = "1.6"
         apiVersion = "1.6"
         freeCompilerArgs += listOf("-opt-in=kotlin.RequiresOptIn", "-Xcontext-receivers")
