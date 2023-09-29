@@ -5,6 +5,7 @@ plugins {
     `kotlin-conventions`
     `plugin-publishing-conventions`
     alias(libs.plugins.build.config)
+    alias(libs.plugins.testkit.plugin)
 }
 
 buildConfig {
@@ -12,14 +13,10 @@ buildConfig {
     buildConfigField("String", "VERSION", "\"$version\"")
 }
 
-tasks.register<Copy>("copy-projects") {
-    from("src/test/projects")
-    into("${project.buildDir}/test-projects")
-
-    filter(mapOf("tokens" to mapOf(
-        "DAGGER_VERSION" to libs.versions.dagger.get(),
-        "PROCESSOR_LIBS" to projects.canIUseAnvilProcessor.dependencyProject.file("build/libs").toString()
-    )), ReplaceTokens::class.java)
+testkitTests {
+    replaceToken("DAGGER_VERSION", libs.versions.dagger.get())
+    replaceToken("TESTKIT_PLUGIN_VERSION", libs.versions.testkit.plugin.get())
+    replaceToken("PROCESSOR_LIBS", projects.canIUseAnvilProcessor.dependencyProject.file("build/libs").toString())
 }
 
 tasks {
@@ -27,9 +24,6 @@ tasks {
         useJUnitPlatform()
 
         dependsOn(":can-i-use-anvil-processor:shadowJar")
-        dependsOn("copy-projects")
-
-        systemProperty("test-projects", "${project.buildDir}/test-projects")
     }
 }
 
@@ -41,6 +35,7 @@ dependencies {
     testImplementation(gradleTestKit())
     testImplementation(libs.junit)
     testImplementation(libs.strikt.core)
+    testImplementation(libs.testkit.junit5)
 }
 
 gradlePlugin {
