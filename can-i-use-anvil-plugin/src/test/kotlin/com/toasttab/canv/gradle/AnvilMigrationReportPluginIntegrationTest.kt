@@ -32,7 +32,7 @@ class AnvilMigrationReportPluginIntegrationTest {
     @Test
     fun `processor dependency added to the kapt configuration when using dagger`(project: TestProject) {
         val result = project.createRunner()
-            .withArguments("dependencies", "--configuration=kapt")
+            .withArguments("anvilMigrationReport", "dependencies", "--configuration=kapt")
             .build()
 
         expectThat(result.output).contains(
@@ -43,7 +43,7 @@ class AnvilMigrationReportPluginIntegrationTest {
     @Test
     fun `processor dependency not added to the kapt configuration when not using dagger`(project: TestProject) {
         val result = project.createRunner()
-            .withArguments("dependencies", "--configuration=kapt")
+            .withArguments("anvilMigrationReport", "dependencies", "--configuration=kapt")
             .build()
 
         expectThat(result.output).not().contains(
@@ -54,7 +54,7 @@ class AnvilMigrationReportPluginIntegrationTest {
     @Test
     fun `processor dependency not added without kapt`(project: TestProject) {
         val result = project.createRunner()
-            .withArguments("dependencies")
+            .withArguments("anvilMigrationReport", "dependencies")
             .build()
 
         expectThat(result.output).not().contains(
