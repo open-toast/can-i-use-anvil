@@ -35,28 +35,30 @@ class AnvilMigrationReportPlugin : Plugin<Project> {
             output = project.layout.buildDirectory.file("anvil-aggregated-report.json").get().asFile
         }
 
-        root.allprojects.forEach { sub ->
-            sub.afterEvaluate {
-                configurations.kapt {
-                    if (it.hasDagger()) {
-                        val output = layout.buildDirectory.file("anvil-report.json").get().asFile
+        if (root.gradle.startParameter.taskNames.contains("anvilMigrationReport")) {
+            root.allprojects.forEach { sub ->
+                sub.afterEvaluate {
+                    configurations.kapt {
+                        if (it.hasDagger()) {
+                            val output = layout.buildDirectory.file("anvil-report.json").get().asFile
 
-                        configure<KaptExtension> {
-                            arguments {
-                                arg("anvil.migration.project", sub.name)
-                                arg("anvil.migration.report", "file://$output")
+                            configure<KaptExtension> {
+                                arguments {
+                                    arg("anvil.migration.project", sub.name)
+                                    arg("anvil.migration.report", "file://$output")
+                                }
                             }
-                        }
 
-                        tasks.withType<KaptTask> {
-                            if (extension.matches(name)) {
-                                outputs.file(output).withPropertyName("anvil-report-output")
+                            tasks.withType<KaptTask> {
+                                if (extension.matches(name)) {
+                                    outputs.file(output).withPropertyName("anvil-report-output")
 
-                                addReportTask(rootReportTask, output, this)
+                                    addReportTask(rootReportTask, output, this)
+                                }
                             }
-                        }
 
-                        it.addDependency("com.toasttab.canv:can-i-use-anvil-processor:${BuildConfig.VERSION}")
+                            it.addDependency("com.toasttab.canv:can-i-use-anvil-processor:${BuildConfig.VERSION}")
+                        }
                     }
                 }
             }

@@ -34,9 +34,14 @@ abstract class AnvilMigrationRootReportTask : DefaultTask() {
     @TaskAction
     fun execute() {
         val report = AggregatedAnvilMigrationReport(
-            reports.map {
-                AnvilMigrationReport.decodeFromString(it.readText())
-            },
+            reports.mapNotNull {
+                if (it.exists()) {
+                    AnvilMigrationReport.decodeFromString(it.readText())
+                } else {
+                    logger.warn("report $it does not exist, possibly project has no sources")
+                    null
+                }
+            }
         )
 
         output.writeText(report.encodeToString())
