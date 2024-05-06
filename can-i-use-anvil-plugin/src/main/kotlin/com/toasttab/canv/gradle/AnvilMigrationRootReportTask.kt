@@ -22,7 +22,6 @@ import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
-import org.jetbrains.kotlin.gradle.utils.`is`
 import java.io.File
 
 abstract class AnvilMigrationRootReportTask : DefaultTask() {

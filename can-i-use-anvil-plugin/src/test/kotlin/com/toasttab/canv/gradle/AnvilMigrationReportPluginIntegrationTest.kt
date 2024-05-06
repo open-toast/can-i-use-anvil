@@ -26,7 +26,6 @@ import strikt.assertions.containsExactly
 import strikt.assertions.hasSize
 import strikt.assertions.isEqualTo
 import kotlin.io.path.readText
-import kotlin.math.exp
 
 @TestKit
 class AnvilMigrationReportPluginIntegrationTest {
