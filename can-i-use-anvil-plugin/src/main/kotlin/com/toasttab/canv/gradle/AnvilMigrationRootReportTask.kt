@@ -26,24 +26,27 @@ import java.io.File
 
 abstract class AnvilMigrationRootReportTask : DefaultTask() {
     @get:InputFiles
-    abstract val reports: ConfigurableFileCollection
+    abstract val reportFiles: ConfigurableFileCollection
 
     @OutputFile
-    lateinit var output: File
+    lateinit var outputFile: File
 
     @TaskAction
     fun execute() {
-        val report = AggregatedAnvilMigrationReport(
-            reports.mapNotNull {
-                if (it.exists()) {
-                    AnvilMigrationReport.decodeFromString(it.readText())
-                } else {
-                    logger.warn("report $it does not exist, possibly project has no sources")
-                    null
-                }
+        val reports = reportFiles.mapNotNull {
+            if (it.exists()) {
+                AnvilMigrationReport.decodeFromString(it.readText())
+            } else {
+                logger.warn("report $it does not exist, possibly project has no sources")
+                null
             }
+        }.sortedBy { it.project }.partition { it.blockers.isEmpty() }
+
+        val report = AggregatedAnvilMigrationReport(
+            reports.first.map { it.project },
+            reports.second
         )
 
-        output.writeText(report.encodeToString())
+        outputFile.writeText(report.encodeToString())
     }
 }

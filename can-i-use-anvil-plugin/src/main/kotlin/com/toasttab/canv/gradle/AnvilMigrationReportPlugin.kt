@@ -32,7 +32,7 @@ class AnvilMigrationReportPlugin : Plugin<Project> {
         val extension = root.extensions.create<AnvilMigrationExtension>("anvilMigration")
 
         val rootReportTask = root.tasks.register<AnvilMigrationRootReportTask>("anvilMigrationReport") {
-            output = project.layout.buildDirectory.file("anvil-aggregated-report.json").get().asFile
+            outputFile = project.layout.buildDirectory.file("anvil-aggregated-report.json").get().asFile
         }
 
         if (root.gradle.startParameter.taskNames.contains("anvilMigrationReport")) {
@@ -44,7 +44,7 @@ class AnvilMigrationReportPlugin : Plugin<Project> {
 
                             configure<KaptExtension> {
                                 arguments {
-                                    arg("anvil.migration.project", sub.name)
+                                    arg("anvil.migration.project", sub.path)
                                     arg("anvil.migration.report", "file://$output")
                                 }
                             }
@@ -68,7 +68,7 @@ class AnvilMigrationReportPlugin : Plugin<Project> {
     private fun addReportTask(reportTask: TaskProvider<AnvilMigrationRootReportTask>, output: Any, kaptTask: KaptTask) {
         reportTask.configure {
             dependsOn(kaptTask)
-            reports.from(output)
+            reportFiles.from(output)
         }
     }
 
