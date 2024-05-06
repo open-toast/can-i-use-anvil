@@ -20,11 +20,12 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-private val JSON = Json { }
+private val JSON = Json { prettyPrint = true }
 
 @Serializable
 data class AggregatedAnvilMigrationReport(
-    val reports: List<AnvilMigrationReport>,
+    val ready: List<String>,
+    val notReady: List<AnvilMigrationReport>,
 ) {
     fun encodeToString() = JSON.encodeToString(this)
 

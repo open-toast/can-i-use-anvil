@@ -26,6 +26,7 @@ import strikt.assertions.containsExactly
 import strikt.assertions.hasSize
 import strikt.assertions.isEqualTo
 import kotlin.io.path.readText
+import kotlin.math.exp
 
 @TestKit
 class AnvilMigrationReportPluginIntegrationTest {
@@ -68,21 +69,23 @@ class AnvilMigrationReportPluginIntegrationTest {
             .withArguments("anvilMigrationReport")
             .build()
 
-        val reports = AggregatedAnvilMigrationReport.decodeFromString(project.dir.resolve("build/anvil-aggregated-report.json").readText()).reports.sortedBy { it.project }
+        val report = AggregatedAnvilMigrationReport.decodeFromString(project.dir.resolve("build/anvil-aggregated-report.json").readText())
 
-        expectThat(reports).hasSize(2)
-        expectThat(reports[0]) {
+        expectThat(report.ready).containsExactly(":project3")
+
+        expectThat(report.notReady).hasSize(2)
+        expectThat(report.notReady[0]) {
             get { blockers }.containsExactly(
                 AnvilMigrationBlocker.JavaModule("com.toasttab.canv.test.AppModule"),
             )
-            get { this.project }.isEqualTo("project1")
+            get { this.project }.isEqualTo(":project1")
         }
-        expectThat(reports[1]) {
+        expectThat(report.notReady[1]) {
             get { blockers }.containsExactly(
                 AnvilMigrationBlocker.Component("com.toasttab.canv.test.AppComponent"),
             )
 
-            get { this.project }.isEqualTo("project2")
+            get { this.project }.isEqualTo(":project2")
         }
     }
 }
