@@ -64,6 +64,14 @@ sealed interface AnvilMigrationBlocker {
     }
 
     @Serializable
+    @SerialName("android-injector")
+    data class AndroidInjector(
+        val typeName: String
+    ) : AnvilMigrationBlocker {
+        override fun toString() = "$typeName contributes an Android injector"
+    }
+
+    @Serializable
     @SerialName("module")
     data class JavaModule(
         val typeName: String,

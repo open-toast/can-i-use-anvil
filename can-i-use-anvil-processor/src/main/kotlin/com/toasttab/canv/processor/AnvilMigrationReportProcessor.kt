@@ -18,15 +18,10 @@ package com.toasttab.canv.processor
 import com.google.auto.service.AutoService
 import com.toasttab.canv.model.AnvilMigrationBlocker
 import com.toasttab.canv.model.AnvilMigrationReport
-import dagger.Component
-import dagger.Module
-import dagger.Subcomponent
 import java.io.FileWriter
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.Processor
 import javax.annotation.processing.RoundEnvironment
-import javax.inject.Inject
-import javax.inject.Singleton
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.Element
 import javax.lang.model.element.TypeElement
@@ -38,8 +33,15 @@ const val PROJECT_NAME = "anvil.migration.project"
 
 @AutoService(Processor::class)
 class AnvilMigrationReportProcessor : AbstractProcessor() {
-    private inline fun <reified T : Annotation> Element.hasAnnotation() = getAnnotation(T::class.java) != null
-    private fun Element.isKotlin() = hasAnnotation<Metadata>()
+    private fun Element.hasAnnotation(vararg annotation: DeclaredAnnotation) =
+        annotationMirrors.any { ann ->
+            val name = (ann.annotationType.asElement() as TypeElement).qualifiedName.toString()
+            annotation.any { decl ->
+                decl.name == name
+            }
+        }
+
+    private fun Element.isKotlin() = hasAnnotation(DeclaredAnnotation.KOTLIN_METADATA)
 
     private var firstRound = true
 
@@ -51,7 +53,7 @@ class AnvilMigrationReportProcessor : AbstractProcessor() {
 
             val report = AnvilMigrationReport(
                 processingEnv.options[PROJECT_NAME] ?: "",
-                roundEnv.rootElements.filterIsInstance<TypeElement>().mapNotNull(::blockerType),
+                roundEnv.rootElements.filterIsInstance<TypeElement>().mapNotNull(::blockers),
             )
 
             processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "$report")
@@ -77,22 +79,24 @@ class AnvilMigrationReportProcessor : AbstractProcessor() {
         return false
     }
 
-    private fun blockerType(type: TypeElement): AnvilMigrationBlocker? {
+    private fun blockers(type: TypeElement): AnvilMigrationBlocker? {
         val isKotlin = type.isKotlin()
 
-        return if (!isKotlin && type.hasAnnotation<Singleton>()) {
+        return if (!isKotlin && type.hasAnnotation(DeclaredAnnotation.JAVAX_SINGLETON)) {
             AnvilMigrationBlocker.JavaSingleton("$type")
-        } else if (!isKotlin && type.hasAnnotation<Module>()) {
+        } else if (!isKotlin && type.hasAnnotation(DeclaredAnnotation.DAGGER_MODULE)) {
             AnvilMigrationBlocker.JavaModule("$type")
-        } else if (type.hasAnnotation<Component>() || type.hasAnnotation<Subcomponent>()) {
+        } else if (type.hasAnnotation(DeclaredAnnotation.DAGGER_COMPONENT, DeclaredAnnotation.DAGGER_SUBCOMPONENT)) {
             AnvilMigrationBlocker.Component("$type")
         } else {
-            val superTypesWithInject = processingEnv.elementUtils.getAllMembers(type).mapNotNull { member ->
+            val members = processingEnv.elementUtils.getAllMembers(type)
+
+            val superTypesWithInject = members.mapNotNull { member ->
                 val declaredIn = member.enclosingElement
 
                 val isKotlinDeclaration = if (declaredIn == type) isKotlin else declaredIn.isKotlin()
 
-                if (member.hasAnnotation<Inject>() && !isKotlinDeclaration) {
+                if (member.hasAnnotation(DeclaredAnnotation.JAVAX_INJECT) && !isKotlinDeclaration) {
                     declaredIn
                 } else {
                     null
@@ -105,6 +109,11 @@ class AnvilMigrationReportProcessor : AbstractProcessor() {
                 } else {
                     AnvilMigrationBlocker.InheritedJavaMemberInjection("$type", superTypesWithInject.map { "$it" }.toSet())
                 }
+            } else if (members.any {
+                    it.hasAnnotation(DeclaredAnnotation.DAGGER_ANDROID_INJECTOR)
+                }
+            ) {
+                AnvilMigrationBlocker.AndroidInjector("$type")
             } else {
                 null
             }
