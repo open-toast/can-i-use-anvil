@@ -32,6 +32,7 @@ class AnvilMigrationProcessorIntegrationTest {
         expectThat(report.blockers).containsExactlyInAnyOrder(
             AnvilMigrationBlocker.InheritedJavaMemberInjection(Activity::class.java.name, setOf(BaseActivity::class.java.name)),
             AnvilMigrationBlocker.Component(AppComponent::class.java.name),
+            AnvilMigrationBlocker.AndroidInjector(AndroidBindings::class.java.name),
             AnvilMigrationBlocker.JavaMemberInjection(BaseActivity::class.java.name),
             AnvilMigrationBlocker.JavaModule(AppModule::class.java.name)
         )
