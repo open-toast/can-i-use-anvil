@@ -26,6 +26,7 @@ Under the hood, it registers a Kapt annotation processor which detects the follo
 * Java classes with `@Inject` members.
 * Kotlin classes with `@Inject` members inherited from a Java superclass.
 * All `@Components`; components require Dagger anyway.
+* Android-specific `@ContributesAndroidInjector`.
 
 ## How to use it
 
